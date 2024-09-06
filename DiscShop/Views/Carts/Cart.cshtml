@@ -1,0 +1,159 @@
+﻿@using Microsoft.AspNetCore.Identity
+@inject UserManager<IdentityUser> UserManager
+@model List<DiscShop.Models.Cart>
+
+@{
+    string userId = UserManager.GetUserId(User); // Get the user-id of the current logged-in user of the website
+    int TotalQuantity = 0;
+    int TotalPrice = 0;
+
+    if (userId != null && Model != null)
+    {
+        foreach (var cart in Model)
+        {
+            if(cart.UserId == userId)
+            {
+                TotalQuantity += cart.Quantity;
+                TotalPrice += cart.Disc.Price * cart.Quantity;
+            }
+        }
+    }
+    string TotalPriceEuro = (TotalPrice * 0.088).ToString("F");
+}
+    
+<div class="text-center flex-row">
+    <div class="d-flex flex-row justify-content-center"><h1 class="display-5 d-inline">DiscBasket</h1><img src="https://www.svgrepo.com/show/322190/disc-golf-basket.svg" class="me-1 position-relative" height="40px" style="top:10px;"/></div>
+    <h4 class="text-warning">@(ViewBag.CartMessage)</h4>
+@if (TotalQuantity == 0)
+{
+        <h4>No discs in the basket, yet...</h4>
+
+        <i class="bi bi-emoji-frown fs-1"></i>
+}
+else if (TotalQuantity == 1)
+        {
+            <h4 class="mb-2 position-relative" style="bottom:5px;"><span class="text-danger mb-1">1</span> disc in basket</h4>       
+           <div class="d-flex flex-row justify-content-center align-items-center">
+                <p class="mt-1">Subtotal: <strong>€@TotalPriceEuro</strong></p>
+                <form method="post" asp-controller="Purchases" asp-action="PurchaseItems">
+                    <button class="btn btn-success mb-2 ms-2">Purchase</button>
+                </form>
+           </div>
+}
+else
+{
+    <h4 class="mb-2 position-relative" style="bottom:5px;"><span class="text-danger">@TotalQuantity</span> discs in basket</h4>
+
+    <div class="d-flex flex-row justify-content-center align-items-center">
+        <p class="mt-1">Subtotal: <strong>€@TotalPriceEuro</strong></p>
+            <form id="purchaseForm" method="post" asp-controller="Purchases" asp-action="PurchaseItems">
+                <button class="btn btn-success mb-2 ms-2">Purchase</button>
+            </form>
+    </div>
+    }
+</div>
+
+<div class="container">
+    <div class="row">
+        @foreach (var cartItem in Model.Where(c => c.UserId == userId))
+        {
+            string discPrice = (cartItem.Disc.Price * 0.088).ToString("F");
+            string totalDiscPrice = (cartItem.Disc.Price * cartItem.Quantity * 0.088).ToString("F");
+            <div class="col-md-4 col-sm-6 col-lg-3 mb-4">
+                <div class="card h-100">
+                    <a asp-controller="Discs" asp-action="Details" asp-route-id="@cartItem.Disc.Id" class="text-decoration-none link-secondary">
+                        @if (cartItem.Disc.Quantity == 0)
+                        {
+                            <img class="card-img-top pt-3 opacity-50" src="@cartItem.Disc.ImgUrl" width="200px" height="200px" style="object-fit: contain;" />
+                        }
+                        else
+                        {
+                            <img class="card-img-top pt-3" src="@cartItem.Disc.ImgUrl" width="200px" height="200px" style="object-fit: contain;" />
+                        }
+                    </a>
+                    <div class="card-body text-center">
+                        <a asp-controller="Discs" asp-action="Details" asp-route-id="@cartItem.Disc.Id" class="text-decoration-none link-secondary">
+                            <h5>@cartItem.Disc.Brand - @cartItem.Disc.Model</h5>
+                            <div class="d-inline">
+                                <p class="card-text mb-0 d-inline">
+                                    @{
+                                        if (cartItem.Disc.Speed > 0 && cartItem.Disc.Speed < 5)
+                                        {
+                                                    @:Putt & Approach
+                                        }
+                                        else if (cartItem.Disc.Speed > 4 && cartItem.Disc.Speed < 7)
+                                        {
+                                                    @:Midrange Disc
+                                        }
+                                        else if (cartItem.Disc.Speed > 6 && cartItem.Disc.Speed < 10)
+                                        {
+                                                    @:Fairway Driver
+                                        }
+                                        else
+                                        {
+                                                    @:Distance Driver
+                                        }
+                                    }
+                                </p>
+                                <strong class="text-sm-center">&nbsp;@cartItem.Disc.Speed @cartItem.Disc.Glide @cartItem.Disc.Turn @cartItem.Disc.Fade</strong>
+                                <p class="card-text position-relative pt-1" style="bottom: 1px;">
+                                    <small><strong>@cartItem.Quantity</strong> in cart - €@totalDiscPrice in total</small>
+                                </p>
+                            </div>
+                        </a>
+                        @if (cartItem.Quantity > 0)
+                        {
+                            <button class="btn-sm btn-danger mt-1 me-2 ms-3 mb-1" onclick="handleRemove(@cartItem.Disc.Id)">
+                                <div class="d-flex flex-row justify-content-between" style="padding: 2px;">
+                                    <span class="card-text ms-1 text-white position-relative font-weight-bold" style="">
+                                        Remove from
+                                    </span>
+                                    <img src="../images/white-basket.png" height="22px" class="ms-1 me-1" />
+                                </div>
+                            </button>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<script>
+
+    function handleRemove(discId) {
+            console.log("discid: " + discId + " recieved!")
+            //JQuery
+            $.ajax({
+                type: 'POST',
+                url: '/Carts/RemoveFromCart/',
+                data: JSON.stringify(discId), // Convert to JSON if your server expects it
+                contentType: 'application/json', // Sending as JSON
+                dataType: 'json', // Expecting JSON response from server
+                success: function (data) {
+                    alert(data.message || "Disc removed from cart!");
+                    window.location.reload();
+                },
+                error: function (xhr, status, error) {
+                    console.error("Error:", xhr.responseText);
+                }
+            });
+    }
+
+    function ClearCart() {
+        $.ajax({
+            type: 'POST',
+            url: '/Carts/ClearCart',
+            contentType: 'application/json', // Sending as JSON
+            dataType: 'json', // Expecting JSON response from server
+            success: function (data) {
+                // Successfully cleared the cart, now submit the form
+                document.getElementById('purchaseForm').submit();
+            },
+            error: function (xhr, status, error) {
+                console.error("Error:", xhr.responseText);
+            }
+        });
+    }
+    
+</script>

@@ -1,0 +1,13 @@
+﻿﻿@{
+    ViewData["Title"] = "Successful Purchase";
+}
+
+<div class="text-center flex-row">
+    <h2 class="display-5">Purchase complete!</h2>
+    <ul class="list-unstyled">
+        <li>Money was withdrawn from your account</li>
+        <li>The order will be shipped within 1-2 days</li>
+    </ul>
+    <p>Click <a asp-controller="Purchases" asp-action="Index">here</a> to see order details</p>
+    <a asp-controller="Discs" asp-action="Shop" class="text-success"><h4>Back to shop</h4></a>
+</div>

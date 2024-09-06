@@ -1,0 +1,141 @@
+﻿@using Microsoft.AspNetCore.Identity
+@inject SignInManager<IdentityUser> SignInManager
+@model List<DiscShop.Models.Disc>
+@{
+	ViewData["Title"] = "Shop";
+}
+
+<div class="text-center flex-row">
+	<h1 class="display-5">Shop</h1>
+		<div class="d-flex flex-row justify-content-between">
+		<form asp-controller="Discs" asp-action="Shop" >
+				<label class="ms-4 me-1">Sort by: </label>
+				<select name="sortBy" class="mt-2" onchange="this.form.submit()"> @* A sorting function, see more in shop-view *@
+					<option value="Brand">Brand</option>
+					<option value="Model">Model</option>	
+					<option value="Price">Price</option>
+					<option value="Speed">Speed</option>
+					<option value="Stability">Stability</option>
+				</select>
+			</form>
+				<form asp-controller="Discs" asp-action="Shop" class="me-3"> @* A search-bar *@
+					<p>
+						<input type="text" name="search" />
+						<input type="submit" value="Search" class="btn-sm btn-success" />
+					</p>
+			</form>
+		</div>
+</div>
+<div class="container">
+	<div class="row">
+		@foreach (var disc in Model) // Looping through the disc model, displaying all discs as cards with info
+		{
+			string discPrice = (disc.Price * 0.088).ToString("F"); // Convert Price from SEK to Euro
+			<div class=" col-md-4 col-sm-6 col-lg-3 mb-4">
+				<div class="card h-100">
+					<a asp-controller="Discs" asp-action="Details" asp-route-id="@disc.Id" class="text-decoration-none link-secondary">
+					@if(disc.Quantity == 0){
+							<img class="card-img-top pt-3 opacity-50" src=@disc.ImgUrl width="200px" height="200px" style="object-fit: contain;" /> //render bleak image if out of stock
+						}
+						else
+						{
+							<img class="card-img-top pt-3" src=@disc.ImgUrl width="200px" height="200px" style="object-fit: contain;" />
+
+						}
+					</a>
+					<div class="card-body text-center"> @* Logic for providing description of what type of disc is displayed *@
+						<a asp-controller="Discs" asp-action="Details" asp-route-id="@disc.Id" class="text-decoration-none link-secondary">
+							<h5>@disc.Brand - @disc.Model</h5>
+							<div class="d-inline">
+								<p class="card-text mb-0 d-inline">
+									@{
+										if (disc.Speed > 0 && disc.Speed < 5)
+										{
+													@:Putt & Approach
+										}
+										else if (disc.Speed > 4 && disc.Speed < 7)
+										{
+													@:Midrange Disc
+										}
+										else if (disc.Speed > 6 && disc.Speed < 10)
+										{
+													@:Fairway Driver
+										}
+										else
+										{
+													@:Distance Driver
+										}
+									}
+								</p>
+								<strong class="text-sm-center">&nbsp;@disc.Speed @disc.Glide @disc.Turn @disc.Fade</strong>
+								<p class="card-text position-relative pt-1" style="bottom: 1px;">
+									<small>€@discPrice - <strong>@disc.Quantity</strong> in stock</small>
+								</p>
+							</div>
+						</a>
+						@if(disc.Quantity > 0) // Display blue add to cart-button if disc is in stock
+						{
+							<div class="d-flex justify-content-center mt-1">
+								@if (SignInManager.IsSignedIn(User))
+								{
+									<button class="btn-sm btn-primary mt-1 me-2 ms-3 mb-1" onclick="handleClick(@disc.Id)" value="Add To Cart">
+										<div class="d-flex flex-row justify-content-between" style="padding: 2px;">
+											<span class="card-text ms-1 text-white position-relative font-weight-bold" style="">
+												Add to
+											</span>
+											<img src="../images/white-basket.png" height="22px" class="ms-1 me-1" />
+										</div>
+									</button>
+
+								}
+							</div>
+						}
+						else // Otherwise display a red out of stock-button with JS alert-function tied to it
+						{
+							<div class="d-flex justify-content-center mt-1">
+									<a onclick="OutOfStock()" class="btn btn-danger">
+										<span>Out of Stock</span>
+									</a>
+							</div>
+						}
+					</div>
+				</div>
+			</div>
+		}
+	</div>
+</div>
+<script>
+	function OutOfStock() {
+		alert("Disc is out of stock!")
+	}
+
+	function handleClick(discId) {
+		let discInDb = false;
+		const discs = @Html.Raw(Json.Serialize(Model));
+		for (let disc of discs) {
+			if (disc.id === parseInt(discId)) { // If disc exists in disc table, let discInDb be true
+				discInDb = true; 
+				break;
+			}
+		}
+		if (discInDb) {
+			//JQuery sending discId to Add to cart-function
+			$.ajax({
+				type: 'POST',
+				url: '/Carts/AddToCart/',
+				data: JSON.stringify(discId), // Convert to JSON if your server expects it
+				contentType: 'application/json', // Sending as JSON
+				dataType: 'json', // Expecting JSON response from server
+				success: function (data) {
+					alert(data.message || "Disc added to cart!");
+					window.location.reload();
+				},
+				error: function (xhr, status, error) {
+					console.error("Error:", xhr.responseText);
+				}
+			});
+		}
+	}
+
+
+</script> 

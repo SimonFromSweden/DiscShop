@@ -1,0 +1,118 @@
+﻿@model DiscShop.Models.Disc;
+
+@{
+    ViewData["Title"] = "Details";
+    string discPrice = (Model.Price * 0.088).ToString("F"); // Converting Price from SEK to Euro
+}
+<div class="d-flex flex-row justify-content-between">
+    <div class="d-flex flex-column justify-content-between">
+        <h1>Details</h1>
+        <a asp-controller="Discs" asp-action="Shop" class=""><h4>Back to shop</h4></a>
+    </div>
+    @if (Model.Quantity > 0) // rendering different buttons depending on if the disc is in stock or not, using razor-syntax
+    {
+        <div class="d-flex justify-content-center flex-column mt-1 float-end">
+            <a asp-controller="Carts" asp-action="AddToCart" asp-route-id="@Model.Id" class="btn btn-primary">
+                <span>Add to</span>
+                <img src="/images/white-basket.png" height="32px" class="mb-1" />
+            </a>
+        </div>
+    }
+    else
+    {
+        <div class="d-flex justify-content-center align-items-center mb-1 float-end">
+            <a onclick="OutOfStock()" class="btn btn-danger h-50">
+                <span>Out of Stock</span>
+            </a>
+        </div>
+    }
+</div>
+<hr />
+
+<div class="mb-5 d-flex flex-row"> @* Listing Disc Info *@
+    <div>
+        <img src="@Model.ImgUrl" class="rounded mx-auto pb-1 position-relative" width="250px" style="" />
+         <div>
+            <dl class="row">
+                <dt class = "col-sm-2">
+                    @Html.DisplayNameFor(model => model.Brand)
+                </dt>
+                <dd class = "col-sm-10">
+                    @Html.DisplayFor(model => model.Brand)
+                </dd>
+                <dt class = "col-sm-2">
+                    @Html.DisplayNameFor(model => model.Model)
+                </dt>
+                <dd class = "col-sm-10">
+                    @Html.DisplayFor(model => model.Model)
+                </dd>
+                <dt class = "col-sm-2">
+                    @Html.DisplayNameFor(model => model.Plastic)
+                </dt>
+                <dd class = "col-sm-10">
+                    @Html.DisplayFor(model => model.Plastic)
+                </dd>
+                <dt class = "col-sm-2">
+                    @Html.DisplayNameFor(model => model.Colour)
+                </dt>
+                <dd class = "col-sm-10">
+                    @Html.DisplayFor(model => model.Colour)
+                </dd>
+                <dt class = "col-sm-2">
+                    @Html.DisplayNameFor(model => model.Weight)
+                </dt>
+                <dd class = "col-sm-10">
+                    @Html.DisplayFor(model => model.Weight)
+                </dd>
+                <dt class = "col-sm-2">
+                    @Html.DisplayNameFor(model => model.Quantity)
+                </dt>
+                <dd class = "col-sm-10">
+                    @Html.DisplayFor(model => model.Quantity)
+                </dd>
+                <dt class = "col-sm-2">
+                    @Html.DisplayNameFor(model => model.Price)
+                </dt>
+                <dd class = "col-sm-10">
+                    €@discPrice
+                </dd>
+                <dt class = "col-sm-2">
+                    Flight Stats
+                </dt>
+                <dd class = "col-sm-10">
+                    @Html.DisplayFor(model => model.Speed) @Html.DisplayFor(model => model.Glide) @Html.DisplayFor(model => model.Turn) @Html.DisplayFor(model => model.Fade)
+                </dd>
+        </dl>
+        </div>
+    </div>
+</div>
+
+<script>
+    function OutOfStock() {
+        alert("Disc is out of stock!")
+    }
+
+    function handleClick(discId) {
+        let discInCart = false;
+        const discs = @Html.Raw(Json.Serialize(Model));
+        discInCart = true;
+               
+        if (discInCart) {
+            //JQuery sending discId to the add to cart-function
+            $.ajax({
+                type: 'POST',
+                url: '/Discs/AddToCart/',
+                data: JSON.stringify(discId), // Convert to JSON if your server expects it
+                contentType: 'application/json', // Sending as JSON
+                dataType: 'json', // Expecting JSON response from server
+                success: function (data) {
+                    alert(data.message || "Disc added to cart!");
+                    window.location.href = '/Discs/Shop';
+                },
+                error: function (xhr, status, error) {
+                    console.error("Error:", xhr.responseText);
+                }
+            });
+        }
+    }
+</script>

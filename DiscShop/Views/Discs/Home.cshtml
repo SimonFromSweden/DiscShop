@@ -1,0 +1,138 @@
+﻿@model List<DiscShop.Models.Disc>
+@using Microsoft.AspNetCore.Identity
+@inject SignInManager<IdentityUser> SignInManager
+
+@* https://projects.raspberrypi.org/en/projects/comic-character/7 INSPIRATION for slider *@
+
+<div class="d-flex justify-content-center position-relative "> @* Clickable hero-slider with back/forth-buttons for the homepage showing some of the news *@
+    <div class="hero-container text-center mt-5">
+        <div class="hero-slider">
+            <span class="hero-slide active"><a asp-controller="Discs" asp-action="Details" asp-route-id="31"><img src="https://discsport.se/grafik/slide/alva-firstrun.webp" class="img-fluid" alt="The Kastaplast Älva Disc" width="80%"></a></span>
+            <span class="hero-slide visually-hidden"><a asp-controller="Discs" asp-action="Details" asp-route-id="32"><img src="https://discsport.se/grafik/slide/showstopper2.webp" class="img-fluid" alt="The Discmania Showstopper DD3" width="80%"></a></span>
+            <span class="hero-slide visually-hidden"><a asp-controller="Discs" asp-action="Details" asp-route-id="33"><img src="https://discsport.se/grafik/slide/swarm-fristrun.webp" class="img-fluid" alt="The Discraft First Run Swarm" width="80%"></a></span>
+            <span class="hero-slide visually-hidden"><a asp-controller="Discs" asp-action="Details" asp-route-id="34"><img src="https://discsport.se/grafik/slide/swirl-sline-td.webp" class="img-fluid" alt="The Discmania Swirl S-Line TD" width="80%"></a></span>
+        </div>
+        <button class="hero-nav-btn prev position-absolute top-50 start-0 ms-5 translate-middle-y" onclick="changeHero(-1)">❮</button>
+        <button class="hero-nav-btn next position-absolute top-50 end-0 me-5 translate-middle-y" onclick="changeHero(+1)">❯</button>
+    </div>
+</div>
+<div class="text-center mt-3">
+	<h3 class="display-5">Latest Products</h3>
+</div>
+<div class="container">
+	<div class="row">
+		@foreach (var disc in Model) @* Looping through the disc model, displaying the 4 discs with the most quantity as cards with info *@
+		{
+			string discPrice = (disc.Price * 0.088).ToString("F"); @* // Convert Price from SEK to Euro *@
+			<div class=" col-md-4 col-sm-6 col-lg-3 mb-4">
+				<div class="card h-100">
+					<a asp-controller="Discs" asp-action="Details" asp-route-id="@disc.Id" class="text-decoration-none link-secondary">
+						@if (disc.Quantity == 0)
+						{
+							<img class="card-img-top pt-3 opacity-50" src=@disc.ImgUrl width="200px" height="200px" style="object-fit: contain;" />
+							@* //render bleak image if out of stock *@
+						}
+						else
+						{
+							<img class="card-img-top pt-3" src=@disc.ImgUrl width="200px" height="200px" style="object-fit: contain;" />
+
+						}
+					</a>
+					<div class="card-body text-center">
+						@* Logic for providing description of what type of disc is displayed *@
+						<a asp-controller="Discs" asp-action="Details" asp-route-id="@disc.Id" class="text-decoration-none link-secondary">
+							<h5>@disc.Brand - @disc.Model</h5>
+							<div class="d-inline">
+								<p class="card-text mb-0 d-inline">
+									@{
+										if (disc.Speed > 0 && disc.Speed < 5)
+										{
+											@:Putt & Approach
+										}
+										else if (disc.Speed > 4 && disc.Speed < 7)
+										{
+											@:Midrange Disc
+										}
+										else if (disc.Speed > 6 && disc.Speed < 10)
+										{
+											@:Fairway Driver
+										}
+										else
+										{
+											@:Distance Driver
+										}
+									}
+								</p>
+								<strong class="text-sm-center">&nbsp;@disc.Speed @disc.Glide @disc.Turn @disc.Fade</strong>
+								<p class="card-text position-relative pt-1" style="bottom: 1px;">
+									<small>€@discPrice - <strong>@disc.Quantity</strong> in stock</small>
+								</p>
+							</div>
+						</a>
+						@if (disc.Quantity > 0) // Display blue add to cart-button if disc is in stock
+						{
+							<div class="d-flex justify-content-center mt-1">
+								@if (SignInManager.IsSignedIn(User))
+								{
+									<button class="btn-sm btn-primary mt-1 me-2 ms-3 mb-1" onclick="handleClick(@disc.Id)" value="Add To Cart">
+										<div class="d-flex flex-row justify-content-between" style="padding: 2px;">
+											<span class="card-text ms-1 text-white position-relative font-weight-bold" style="">
+												Add to
+											</span>
+											<img src="../images/white-basket.png" height="22px" class="ms-1 me-1" />
+										</div>
+									</button>
+
+								}
+							</div>
+						}
+						else // Otherwise display a red out of stock-button with JS alert-function tied to it
+						{
+							<div class="d-flex justify-content-center mt-1">
+								<a onclick="OutOfStock()" class="btn btn-danger">
+									<span>Out of Stock</span>
+								</a>
+							</div>
+						}
+					</div>
+				</div>
+			</div>
+		}
+	</div>
+</div>
+
+<script>
+    const heroSlides = document.querySelectorAll('.hero-slide');
+    var currentIndex = 0;
+    function changeHero(direction) {
+            heroSlides[currentIndex].classList.remove("active");
+            heroSlides[currentIndex].classList.add("visually-hidden");
+            currentIndex = currentIndex + direction;
+        if (currentIndex < 0) {
+            currentIndex = 3;
+        } else if (currentIndex > 3) {
+            currentIndex = 0;
+        }
+        heroSlides[currentIndex].classList.remove("visually-hidden");
+        heroSlides[currentIndex].classList.add("active");
+    }
+</script>
+
+<style>
+    .hero-nav-btn {
+        background-color: rgba(0, 0, 0, 0.4); /* Semi-transparent black background */
+        color: white; /* White text color */
+        border: none; /* Remove default border */
+        border-radius: 40%; /* Make the buttons circular */
+        padding: 6px 12.5px; /* Increase padding for a larger button */
+        font-size: 1.5rem; /* Increase the size of the arrows */
+        cursor: pointer; /* Change cursor to pointer on hover */
+        transition: background-color 0.3s, transform 0.3s; /* Smooth transition for hover effects */
+    }
+
+        .hero-nav-btn:hover {
+            color: #D5B263;
+            background-color: rgba(0, 0, 0, 0.6); /* Darker background on hover */
+            transform: scale(1.1); /* Slightly increase the size on hover */
+        }
+</style>
