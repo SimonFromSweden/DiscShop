@@ -9,5 +9,5 @@ I have built many webshops before during my studies but this is the first one I 
 It was my first BIG project using ASP.NET Core MVC and I learned a lot during the process. I also developed my bootstrap styling skills.
 I learned a lot about how to pass data back and forth between view, controller and database (a skill I suspect will come in handy in the future).
 
-The process was not without hurdles, a few reboots were needed, but I learned so much along the way.
+The process was not without hurdles, a few reboots were needed, but I learned so much along the way.\
 I hope you enjoy!
